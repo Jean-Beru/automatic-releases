@@ -14,12 +14,16 @@ final class SemVerVersion
     private int $major;
     private int $minor;
     private int $patch;
+    private string $prerelease;
+    private string $buildmetadata;
 
-    private function __construct(int $major, int $minor, int $patch)
+    private function __construct(int $major, int $minor, int $patch, string $prerelease = '', string $buildmetadata = '')
     {
         $this->major = $major;
         $this->minor = $minor;
         $this->patch = $patch;
+        $this->prerelease = $prerelease;
+        $this->buildmetadata = $buildmetadata;
     }
 
     /**
@@ -28,20 +32,36 @@ final class SemVerVersion
      */
     public static function fromMilestoneName(string $name): self
     {
+        $regex = '(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?';
+
         Assert::notEmpty($name);
-        Assert::regex($name, '/^(v)?\\d+\\.\\d+\\.\\d+$/');
+        Assert::regex($name, "/^(v)?$regex$/");
 
-        preg_match('/(\\d+)\\.(\\d+)\\.(\\d+)/', $name, $matches);
+        preg_match("/$regex/", $name, $matches);
 
-        Assert::isList($matches);
+        Assert::isArray($matches);
 
-        return new self((int) $matches[1], (int) $matches[2], (int) $matches[3]);
+        return new self(
+            (int) $matches['major'],
+            (int) $matches['minor'],
+            (int) $matches['patch'],
+            isset($matches['prerelease']) ? (string) $matches['prerelease'] : '',
+            isset($matches['buildmetadata']) ? (string) $matches['buildmetadata'] : ''
+        );
     }
 
     /** @psalm-return non-empty-string */
     public function fullReleaseName(): string
     {
-        return $this->major . '.' . $this->minor . '.' . $this->patch;
+        $name = $this->major . '.' . $this->minor . '.' . $this->patch;
+        if ($this->prerelease) {
+            $name .= '-' . $this->prerelease;
+        }
+        if ($this->buildmetadata) {
+            $name .= '+' . $this->buildmetadata;
+        }
+
+        return $name;
     }
 
     public function major(): int
@@ -76,12 +96,12 @@ final class SemVerVersion
 
     public function isNewMinorRelease(): bool
     {
-        return $this->patch === 0;
+        return $this->patch === 0 && empty($this->prerelease) && empty($this->buildmetadata);
     }
 
     public function isNewMajorRelease(): bool
     {
-        return $this->minor === 0 && $this->patch === 0;
+        return $this->minor === 0 && $this->patch === 0 && empty($this->prerelease) && empty($this->buildmetadata);
     }
 
     public function lessThanEqual(self $other): bool

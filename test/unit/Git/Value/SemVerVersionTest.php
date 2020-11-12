@@ -36,9 +36,11 @@ final class SemVerVersionTest extends TestCase
     {
         return [
             ['1.2.3', 1, 2, '1.2.3'],
-            ['v1.2.3', 1, 2, '1.2.3'],
-            ['v4.3.2', 4, 3, '4.3.2'],
+            ['v1.2.3', 1, 2,'1.2.3'],
+            ['v4.3.2', 4, 3,'4.3.2'],
             ['v44.33.22', 44, 33, '44.33.22'],
+            ['v1.2.3-RC1', 1, 2, '1.2.3-RC1'],
+            ['v1.2.3-RC1+build2', 1, 2, '1.2.3-RC1+build2'],
         ];
     }
 
@@ -116,6 +118,8 @@ final class SemVerVersionTest extends TestCase
             ['1.1.2', false],
             ['1.1.90', false],
             ['0.9.0', true],
+            ['0.9.0-RC1', false],
+            ['0.9.0-build1', false],
         ];
     }
 
@@ -148,6 +152,8 @@ final class SemVerVersionTest extends TestCase
             ['1.1.1', false],
             ['1.1.2', false],
             ['1.1.90', false],
+            ['3.0.0-RC1', false],
+            ['3.0.0+build1', false],
         ];
     }
 
@@ -188,6 +194,15 @@ final class SemVerVersionTest extends TestCase
             ['0.1.1', '0.1.0', false],
             ['2.0.0', '1.0.0', false],
             ['1.0.0', '2.0.0', true],
+            ['1.0.0-RC1', '1.0.0-RC2', true],
+            ['1.0.0-RC2', '1.0.0-RC1', false],
+            ['1.0.1-RC1', '1.0.0-RC2', false],
+            ['1.0.0+build1', '1.0.0+build2', true],
+            ['1.0.0+build2', '1.0.0+build1', false],
+            ['1.0.1+build1', '1.0.0+build2', false],
+            ['1.0.0-RC1+build1', '1.0.0-RC2+build2', true],
+            ['1.0.0-RC2+build2', '1.0.0-RC1+build1', false],
+            ['1.0.1-RC1+build1', '1.0.0-RC1+build2', false],
         ];
     }
 
